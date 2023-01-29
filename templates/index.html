@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ title }}'s Server Status!</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-GLhlTQ8iRABdZLl6O3oVMWSktQOp6b7In1Zl3/Jr59b6EGGoI1aFkw7cmDA6j6gD" crossorigin="anonymous">
+    <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+    <h1>{{ title }}</h1><br>
+    <h5>
+        Server Status: <div id="status">Unknown</div><br><br>
+        <div class="information">
+            <div class="spin"></div><br>
+            Fetching Data From Server
+        </div>
+        
+    </h5>
+    <br>
+    <button type="button" class="btn btn-info event_button">Fetch Now</button>
+    <footer id="footer"></footer>
+    <script defer>
+        var host = "{{ host }}"
+        var port = Number("{{ port }}")
+        var location_ = null
+        console.log("Host: "+host)
+        console.log("Port: "+port)
+        console.log("Location: "+window.location.hostname+":"+window.location.port)
+        debugger
+        fetch("http://"+window.location.hostname+":"+window.location.port+"/api/geo").then(response => response.json().then(data => {
+            location_ = data
+            document.getElementById("footer").innerHTML = `
+            Made by <a href="https://github.com/timelessnesses/">timelessnesses</a><br>
+            This server is hosted in ${location_.regionName} (Region: ${location_.regionName}, Country: ${location_.country}, Continent: ${location_.continent})<br>
+            ISP: ${location_.isp}<br>
+            Reverse DNS: ${location_.reverse}<br>
+            Is Mobile: ${location_.mobile}<br>
+            Proxy: ${location_.proxy}<br>
+            Data Center: ${location_.hosting}<br>
+        `
+        })).catch(error => console.log(error))
+
+        function getServerInformation(host, port) {
+            const url = `http://${window.location.hostname}:${window.location.port}/api/server/?host=${host}&port=${port}`;
+            return fetch(url).then(
+                response => response.json().then(
+                    data => data
+                ).catch(
+                    error => console.log(error) // not valid json?
+                )
+            ).catch(
+                error => {
+                    {
+                        console.log(error)
+                        return {
+                            status: false,
+                            name: "Server is offline"
+                        }
+                    }
+                }
+            ) 
+        }
+
+        async function buildInformation(host, port) {
+            const data = await getServerInformation(host, port);
+            const server = document.getElementsByClassName("information")[0]
+            if(!data.status) {
+                server.innerHTML = `<div class="error">${"Server is offline or Server returns invalid response"}</div><br>`
+                document.getElementById("status").innerHTML = "Offline"
+                return
+            }
+            document.getElementById("status").innerHTML = "Online"
+            if (data.type === "java"){
+                server.innerHTML = `<div class="success">
+Description: ${data.description}<br>
+Version: ${data.version}<br>
+Players: ${data.players.online}/${data.players.max}<br>
+List of Players: ${data.players.players.join(',')}<br>
+Favicon: <img src="data:image/png;base64, ${data.favicon}"><br>
+Latency (${location_.regionName}) : ${data.latency}ms<br>
+Type: ${data.type}<br>
+Query: <details><summary>Click to see</summary><br>
+    Plugins: ${data.query.plugins.join(", ")}<br>
+    Map: ${data.query.map}<br>
+    Brand: ${data.query.brand}<br>
+    Version: ${data.query.version}<br>
+    Players: ${data.query.players.online}/${data.query.players.max}<br>
+    List of Players: ${data.query.players.players.join(", ")}<br>
+    MOTD (Raw): ${data.query.motd}<br>
+</details>
+</div><br>`
+            }
+            
+            
+        }
+        const button = document.getElementsByClassName("event_button")[0]
+        button.addEventListener("click", () => {
+            button.disabled = true
+            document.getElementsByClassName("information")[0].innerHTML = `
+            <div class="spin"></div><br>
+            Fetching Data From Server`
+            document.getElementById("status").innerHTML = "Unknown"
+            buildInformation(host, port)
+            button.disabled = false
+        })
+        setInterval(() => {
+            document.getElementsByClassName("information")[0].innerHTML = `
+            <div class="spin"></div><br>
+            Fetching Data From Server`
+            document.getElementById("status").innerHTML = "Unknown"
+            buildInformation(host, port)
+        }, 20000)
+        buildInformation(host, port)
+    </script>
+    <!---->
+</body>
+</html>

@@ -1,0 +1,44 @@
+html, body {
+  height: 100%;
+}
+
+html {
+  display: table;
+  margin: 0 auto;
+}
+
+body {
+  display: table-cell;
+  vertical-align: middle;
+  background-color: whitesmoke;
+}
+
+.spin {
+  margin: 0 auto;
+  background-color: #00000020;
+  height: 100px;
+  width: 100px;
+  border-radius: 200px;
+  border: 20px solid #00000000;
+  border-top: 20px solid black;
+  animation: loading 1s infinite;
+}
+
+@keyframes loading {
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+.success {
+  color: black;
+}
+
+.error {
+  color: red;
+}
+
+code {
+  display: block;
+  white-space: pre-wrap   
+}
