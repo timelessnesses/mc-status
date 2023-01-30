@@ -29,7 +29,7 @@
         console.log("Port: "+port)
         console.log("Location: "+window.location.host)
         debugger
-        fetch(`${window.location.protocol}//{window.location.host}/api/geo`).then(response => response.json().then(data => {
+        fetch(`${window.location.protocol}//${window.location.host}/api/geo`).then(response => response.json().then(data => {
             location_ = data
             document.getElementById("footer").innerHTML = `
             Made by <a href="https://github.com/timelessnesses/">timelessnesses</a><br>
