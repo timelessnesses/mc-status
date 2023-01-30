@@ -27,9 +27,9 @@
         var location_ = null
         console.log("Host: "+host)
         console.log("Port: "+port)
-        console.log("Location: "+window.location.hostname+":"+window.location.port)
+        console.log("Location: "+window.location.host)
         debugger
-        fetch("http://"+window.location.hostname+":"+window.location.port+"/api/geo").then(response => response.json().then(data => {
+        fetch("http://"+window.location.host+"/api/geo").then(response => response.json().then(data => {
             location_ = data
             document.getElementById("footer").innerHTML = `
             Made by <a href="https://github.com/timelessnesses/">timelessnesses</a><br>
@@ -43,7 +43,7 @@
         })).catch(error => console.log(error))
 
         function getServerInformation(host, port) {
-            const url = `http://${window.location.hostname}:${window.location.port}/api/server/?host=${host}&port=${port}`;
+            const url = `http://${window.location.host}/api/server/?host=${host}&port=${port}`;
             return fetch(url).then(
                 response => response.json().then(
                     data => data
