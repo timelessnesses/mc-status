@@ -11,7 +11,7 @@ endif
 run:
 	$(PYTHON) main.py
 install_deps:
-        pip install poetry
+	pip install poetry
 	poetry install
 update:
 	poetry update
