@@ -44,6 +44,7 @@
 
         function getServerInformation(host, port) {
             const url = `http://${window.location.host}/api/server/?host=${host}&port=${port}`;
+            console.log(url)
             return fetch(url).then(
                 response => response.json().then(
                     data => data
