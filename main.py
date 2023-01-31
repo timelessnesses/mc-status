@@ -148,4 +148,4 @@ async def favicon():
     return fastapi.responses.FileResponse("static/favicon.ico")
 
 if __name__ == "__main__":
-    uvicorn.run("main:app",host="0.0.0.0",port=int(os.getenv("SERVER_HOST_PORT",80)),reload=True)
+    uvicorn.run("main:app",host="0.0.0.0",port=int(os.getenv("SERVER_HOST_PORT",80)))
