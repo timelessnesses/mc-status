@@ -92,6 +92,21 @@ Query: <details><summary>Click to see</summary><br>
     MOTD (Raw): ${data.query.motd}<br>
 </details>
 </div><br>`
+            } else if (data.type === "bedrock"){
+                server.innerHTML = `<div class="success">
+Version: ${data.version}<br>
+Protocol: ${data.protocol}<br>
+Brand: ${data.brand}<br>
+Players: ${data.players.online}/${data.players.max}<br>
+Latency (${location_.regionName}) : ${data.latency}ms<br>
+MOTD (Raw): ${data.motd}<br>
+Map: ${data.map}<br>
+Gamemode: ${data.gamemode}<br>
+`
+            } else{
+                server.innerHTML = `<div class="error">${"Server is offline or Server returns invalid response"}</div><br>`
+                document.getElementById("status").innerHTML = "Offline"
+                throw new Error("Invalid server type")
             }
             
             

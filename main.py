@@ -111,6 +111,14 @@ def process_bedrock(info: BedrockStatusResponse):
         "version": info.version.version,
         "brand": info.version.brand,
         "protocol": info.version.protocol,
+        "latency": info.latency,
+        "players": {
+            "online": info.players_online,
+            "max": info.players_max,
+        },
+        "motd": info.motd,
+        "map": info.map,
+        "gamemode": info.gamemode,
     }
 
 @app.get("/api/server/")
