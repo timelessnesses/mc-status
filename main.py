@@ -2,21 +2,25 @@
 This webserver serves index.html as a minecraft status (which can be either Bedrock or Java Edition)
 """
 
+import socket  # handling errors
+
 import fastapi
 import mcstatus
-from mcstatus.pinger import PingResponse
-from mcstatus.bedrock_status import BedrockStatusResponse
-from fastapi.templating import Jinja2Templates
-from fastapi.staticfiles import StaticFiles
-import socket # handling errors
-from dotenv import load_dotenv
 import uvicorn
+from dotenv import load_dotenv
+from fastapi.staticfiles import StaticFiles
+from fastapi.templating import Jinja2Templates
+from mcstatus.bedrock_status import BedrockStatusResponse
+from mcstatus.pinger import PingResponse
 from mcstatus.querier import QueryResponse
+
 load_dotenv()
 import os
-import aiohttp
-import traceback
 import sys
+import traceback
+
+import aiohttp
+
 server_name = os.getenv("SERVER_NAME")
 server_host = os.getenv("SERVER_HOST")
 server_port = os.getenv("SERVER_PORT", 25565)
@@ -25,17 +29,21 @@ app = fastapi.FastAPI(docs_url=None)
 template = Jinja2Templates(directory="templates")
 app.mount("/static", StaticFiles(directory="static"), name="static")
 
-geolocation = None # required for ping
+geolocation = None  # required for ping
+
+
 async def intializer():
     async with aiohttp.ClientSession() as ses:
         async with ses.get("https://api.ipify.org") as res:
             ip = await res.text()
-          
+
     global geolocation
     async with aiohttp.ClientSession() as ses:
-        async with ses.get(f"http://ip-api.com/json/{ip}?fields=status,message,continent,country,regionName,isp,reverse,mobile,proxy,hosting") as resp:
+        async with ses.get(
+            f"http://ip-api.com/json/{ip}?fields=status,message,continent,country,regionName,isp,reverse,mobile,proxy,hosting"
+        ) as resp:
             geolocation = await resp.json()
-            
+
 
 def hide_path(string: str) -> str:
     normal = string.replace(os.getcwd(), "REDACTED")
@@ -44,40 +52,64 @@ def hide_path(string: str) -> str:
         if package != ".":
             normal = normal.replace(package, "REDACTED")
     return normal
+
+
 def process_traceback(exc: Exception):
-    return f'{exc.__class__.__name__}\n'+hide_path('\n'.join(traceback.format_exception(type(exc), exc, exc.__traceback__)))
-    
+    return f"{exc.__class__.__name__}\n" + hide_path(
+        "\n".join(traceback.format_exception(type(exc), exc, exc.__traceback__))
+    )
+
 
 @app.on_event("startup")
 async def start():
     await intializer()
 
 
-
 # Let's just handle 404s ourselves
 @app.exception_handler(404)
-async def http_exception_handler(request: fastapi.Request , exc: Exception):
-    return template.TemplateResponse("404.html", {"thingies": process_traceback(exc), "request": request}, status_code=404)
+async def http_exception_handler(request: fastapi.Request, exc: Exception):
+    return template.TemplateResponse(
+        "404.html",
+        {"thingies": process_traceback(exc), "request": request},
+        status_code=404,
+    )
+
 
 @app.exception_handler(500)
-async def http_exception_handler(request: fastapi.Request , exc: Exception):
-    return template.TemplateResponse("500.html", {"thingies": process_traceback(exc), "request": request}, status_code=500)
+async def http_exception_handler(request: fastapi.Request, exc: Exception):
+    return template.TemplateResponse(
+        "500.html",
+        {"thingies": process_traceback(exc), "request": request},
+        status_code=500,
+    )
+
+
 @app.get("/")
 async def index(request: fastapi.Request):
-    return template.TemplateResponse("index.html", {"title":server_name, "request": request, "host": server_host, "port": server_port})
+    return template.TemplateResponse(
+        "index.html",
+        {
+            "title": server_name,
+            "request": request,
+            "host": server_host,
+            "port": server_port,
+        },
+    )
+
 
 @app.get("/custom")
-async def specific_server(request: fastapi.Request, server: str, port: int= 25565):
-    return template.TemplateResponse("index.html", {"title":server, "request": request, "host": server, "port": port})
+async def specific_server(request: fastapi.Request, server: str, port: int = 25565):
+    return template.TemplateResponse(
+        "index.html",
+        {"title": server, "request": request, "host": server, "port": port},
+    )
 
-def process_java(info: PingResponse, query: QueryResponse=None):
+
+def process_java(info: PingResponse, query: QueryResponse = None):
     j = []
     if info.players.sample:
         for player in info.players.sample:
-            j.append({
-                "name": player.name,
-                "id": player.id
-            })
+            j.append({"name": player.name, "id": player.id})
     return {
         "status": True,
         "version": info.version.name,
@@ -85,10 +117,10 @@ def process_java(info: PingResponse, query: QueryResponse=None):
         "players": {
             "online": info.players.online,
             "max": info.players.max,
-            "players": j
+            "players": j,
         },
         "description": info.description,
-        "favicon": info.favicon if info.favicon else None, # bytes
+        "favicon": info.favicon if info.favicon else None,  # bytes
         "latency": info.latency,
         "type": "java",
         "query": {
@@ -104,6 +136,7 @@ def process_java(info: PingResponse, query: QueryResponse=None):
             "map": query.map if query else None,
         },
     }
+
 
 def process_bedrock(info: BedrockStatusResponse):
     return {
@@ -121,39 +154,44 @@ def process_bedrock(info: BedrockStatusResponse):
         "gamemode": info.gamemode,
     }
 
+
 @app.get("/api/server/")
-async def server(host: str, port: int=None):
+async def server(host: str, port: int = None):
     try:
         a = mcstatus.JavaServer(host, port)
         try:
             return process_java(await a.async_status(), await a.async_query())
         except (OSError, socket.gaierror, socket.timeout):
             try:
-                return process_java(await a.async_status()) # query failed because server doesn't have it enabled
-            except (OSError, socket.gaierror, socket.timeout): # not valid server
-                return {
-                    "status": False
-                }
+                return process_java(
+                    await a.async_status()
+                )  # query failed because server doesn't have it enabled
+            except (OSError, socket.gaierror, socket.timeout):  # not valid server
+                return {"status": False}
     except (OSError, socket.gaierror, socket.timeout):
         try:
             a = mcstatus.BedrockServer(host, port)
             return process_bedrock(await a.async_status())
         except (OSError, socket.gaierror, socket.timeout):
-            return {
-                "status": False
-            }
+            return {"status": False}
+
 
 @app.get("/api/geo")
 async def geo():
     return geolocation
 
+
 @app.get("/api/raise")
 async def raiser():
     raise Exception("test")
+
 
 @app.get("/favicon.ico")
 async def favicon():
     return fastapi.responses.FileResponse("static/favicon.ico")
 
+
 if __name__ == "__main__":
-    uvicorn.run("main:app",host="0.0.0.0",port=int(os.getenv("SERVER_HOST_PORT",10000)))
+    uvicorn.run(
+        "main:app", host="0.0.0.0", port=int(os.getenv("SERVER_HOST_PORT", 10000))
+    )
