@@ -10,6 +10,7 @@ import uvicorn
 from dotenv import load_dotenv
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
+from fastapi.exceptions import RequestValidationError
 from mcstatus.bedrock_status import BedrockStatusResponse
 from mcstatus.pinger import PingResponse
 from mcstatus.querier import QueryResponse
@@ -83,6 +84,13 @@ async def http_exception_handler(request: fastapi.Request, exc: Exception):
         status_code=500,
     )
 
+@app.exception_handler(RequestValidationError)
+async def http_exception_handler(request: fastapi.Request, exc: Exception):
+    return template.TemplateResponse(
+        "422.html",
+        {"thingies": process_traceback(exc), "request": request},
+        status_code=422,
+    )
 
 @app.get("/")
 async def index(request: fastapi.Request):
